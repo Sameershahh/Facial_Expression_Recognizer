@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Facial Expression Recognition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 2rem;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .container {
+            max-width: 700px;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.1);
+        }
+        .title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        #video {
+            border-radius: 8px;
+        }
+        img.preview {
+            border-radius: 8px;
+            margin-top: 1rem;
+            max-width: 100%;
+            height: auto;
+        }
+        .mode-buttons .btn {
+            margin: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="title">Facial Expression Recognition</h2>
+
+    <div class="d-flex justify-content-center mode-buttons">
+        <button onclick="selectMode('upload')" class="btn btn-outline-primary">
+            <i class="bi bi-upload"></i> Upload Image
+        </button>
+        <button onclick="selectMode('webcam')" class="btn btn-outline-success">
+            <i class="bi bi-camera-video"></i> Use Webcam
+        </button>
+    </div>
+
+    <!-- Upload section -->
+    <div id="uploadSection" style="display:none;" class="mt-4">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label">Select an Image</label>
+                <input class="form-control" type="file" name="image" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Submit</button>
+        </form>
+    </div>
+
+    <!-- Webcam section -->
+    <div id="webcamSection" style="display:none;" class="mt-4 text-center">
+        <video id="video" width="320" height="240" autoplay></video>
+        <br>
+        <button onclick="capture()" class="btn btn-success mt-3">
+            <i class="bi bi-camera"></i> Capture
+        </button>
+        <form id="webcamForm" method="POST" enctype="multipart/form-data" style="display:none;">
+            <input type="hidden" name="webcam_image" id="webcamImage">
+        </form>
+        <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+    </div>
+
+    <!-- Results -->
+    {% if error %}
+        <div class="alert alert-danger mt-4" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {% if emotion %}
+        <div class="card text-center mt-4 border-success">
+            <div class="card-header bg-success text-white">
+                Prediction Result
+            </div>
+            <div class="card-body">
+                <h5 class="card-title display-6">Emotion: <strong>{{ emotion | upper }}</strong></h5>
+                <img src="{{ image_url }}" alt="Uploaded" class="preview">
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- JS Logic -->
+<script>
+    function selectMode(mode) {
+        document.getElementById('uploadSection').style.display = 'none';
+        document.getElementById('webcamSection').style.display = 'none';
+
+        if (mode === 'upload') {
+            stopWebcam();
+            document.getElementById('uploadSection').style.display = 'block';
+        } else {
+            startWebcam();
+            document.getElementById('webcamSection').style.display = 'block';
+        }
+    }
+
+    function startWebcam() {
+        const video = document.getElementById('video');
+        if (!navigator.mediaDevices.getUserMedia) {
+            alert("Webcam not supported");
+            return;
+        }
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                alert("Cannot access webcam.");
+            });
+    }
+
+    function stopWebcam() {
+        const video = document.getElementById('video');
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+        }
+    }
+
+    function capture() {
+        const canvas = document.getElementById('canvas');
+        const video = document.getElementById('video');
+        const context = canvas.getContext('2d');
+
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        document.getElementById('webcamImage').value = dataUrl;
+        document.getElementById('webcamForm').submit();
+    }
+</script>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
